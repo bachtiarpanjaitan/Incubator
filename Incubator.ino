@@ -7,25 +7,34 @@ const int d5 = 5;
 const int d6 = 6;
 const int d7 = 7;
 const int BL = 10;
-int led = 38;
+const int tempSensor = A8;
+const int pinRelay = 53;
 
 int menuLevel = 0;
 int menusize = 1;
 int suhuValue = 28;
 int lembabValue = 15;
+int counterTemp = 10;
+int countValueTemp = 0;
+int lopper = 0;
+
+//Setting Variable
+
 String pilih[] = {"TEMPERATURE","HUMIDITY"};
 int posMen = 0;
 bool flagMenu = false;
 bool btnOk = false;
   
 LiquidCrystal lcd (RS,EN,d4,d5,d6,d7);
-
 void setup() {
-  // put your setup code here, to run once:
   Serial.begin(9600);
   lcd.begin(16,2);
   lcd.setCursor(0,0);
   lcd.print("UP/DOWN for MENU");
+
+  pinMode(tempSensor,INPUT);
+  pinMode(pinRelay,OUTPUT);
+  digitalWrite(pinRelay,HIGH);
 }
 
 /**
@@ -84,6 +93,7 @@ int tombol(){
 }
 
 void loop() {
+  lopper++;
   if(tombol() == 1 && menuLevel == 0){
     menu();
     if(posMen >0){
@@ -130,9 +140,28 @@ void loop() {
     menuLevel = 0;
     posMen = 1;
   }
-  Serial.println(posMen);
-  delay(250);
+  //Serial.println(posMen);
+  if(lopper <= counterTemp){
+    countValueTemp += analogRead(tempSensor);
+  }else {
+      float aveTempValue = countValueTemp / counterTemp;
+      float celcius = fahrenheitToCelcius(aveTempValue);
+//      Serial.print("TEMP : ");
+//      Serial.println(celcius);
+      if(celcius < (float)suhuValue ){
+        digitalWrite(pinRelay,LOW); //Relay Hidup
+      }else{
+        digitalWrite(pinRelay,HIGH); //Relay Mati
+      }
+      
+      lopper = 0;
+      countValueTemp = 0;
+  }
+
+  delay(200);
 }
 
-
-
+float fahrenheitToCelcius(float faren){
+  float stepa =  (faren - 32);
+  return stepa * 0.55555555555;
+}
